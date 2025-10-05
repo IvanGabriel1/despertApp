@@ -9,6 +9,7 @@ export const AlarmaProvider = ({ children }) => {
     unavez: true,
     dias: [],
     hora: "",
+    minutos: "",
     sonido: "",
   });
 

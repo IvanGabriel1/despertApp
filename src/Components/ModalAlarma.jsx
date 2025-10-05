@@ -6,9 +6,10 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { colors } from "../Global/colors";
 import { AlarmaContext } from "../Context/AlarmaContext";
+import SonidoAcordeon from "./SonidoAcordeon";
 
 const ModalAlarma = () => {
   const [hora, setHora] = useState("");
@@ -21,6 +22,39 @@ const ModalAlarma = () => {
   const [viernes, setViernes] = useState(false);
   const [sabado, setSabado] = useState(false);
   const [domingo, setDomingo] = useState(false);
+
+  const [sonidoElegido, setSonidoElegido] = useState(null);
+
+  useEffect(() => {
+    console.log("Nuevo estado de creandoAlarma:", creandoAlarma);
+  }, [creandoAlarma]);
+
+  const sonidos = [
+    {
+      nombre: "Alarma Despetador",
+      archivo: require("../../assets/sonidos/Alarma0.mp3"),
+    },
+    {
+      nombre: "Morning Birds",
+      archivo: require("../../assets/sonidos/morning-birds.mp3"),
+    },
+    {
+      nombre: "Morning Birds 2",
+      archivo: require("../../assets/sonidos/morning-birds2.mp3"),
+    },
+    {
+      nombre: "Homero Renuncio",
+      archivo: require("../../assets/sonidos/homero-renuncio.mp3"),
+    },
+    {
+      nombre: "Oceano",
+      archivo: require("../../assets/sonidos/ocean.mp3"),
+    },
+    {
+      nombre: "Lobo",
+      archivo: require("../../assets/sonidos/wolf.mp3"),
+    },
+  ];
 
   const {
     isOpenModal,
@@ -36,6 +70,22 @@ const ModalAlarma = () => {
       return;
     }
 
+    const diasArray = [];
+    if (lunes) diasArray.push("Lunes");
+    if (martes) diasArray.push("Martes");
+    if (miercoles) diasArray.push("Miercoles");
+    if (jueves) diasArray.push("Jueves");
+    if (viernes) diasArray.push("Viernes");
+    if (sabado) diasArray.push("Sabado");
+    if (domingo) diasArray.push("Domingo");
+
+    if (creandoAlarma.unavez === false && diasArray.length === 0) {
+      alert(
+        "Debes elegir por lo menos 1 dia, o seleccionar la opcion `Solo una vez` "
+      );
+      return;
+    }
+
     const h = parseInt(hora);
     const m = parseInt(minutos);
 
@@ -44,7 +94,17 @@ const ModalAlarma = () => {
       return;
     }
 
+    const nuevaAlarma = {
+      ...creandoAlarma,
+      dias: diasArray,
+      hora: h,
+      minutos: m,
+    };
+    setCreandoAlarma(nuevaAlarma);
+
     alert(`Alarma programada a las ${h}:${m.toString().padStart(2, "0")}`);
+
+    console.log(nuevaAlarma);
   };
 
   const handleBotonUnaVez = () => {
@@ -179,12 +239,19 @@ const ModalAlarma = () => {
           </View>
         )}
 
-        <Text style={styles.modalTitle2}>Crear audio para despertar:</Text>
+        <Text style={styles.modalTitle2}>Audio de la alarma:</Text>
 
-        {/* npx expo install expo-av */}
-        <Pressable style={styles.botonGrabarAudio}>
+        {/*Para la funcion de grabar tu propio audio no tendria que usar expo sino: Eject a React Native CLI (expo eject) */}
+        {/* <Pressable style={styles.botonGrabarAudio}>
           <Text style={styles.botonGrabarAudioText}>Grabar Audio</Text>
-        </Pressable>
+        </Pressable> */}
+
+        {/* npx expo install expo-audio => sirve para reproducir audio en aplicaciones Expo.*/}
+        <SonidoAcordeon
+          sonidos={sonidos}
+          onSeleccionar={(sonido) => setSonidoElegido(sonido)}
+        />
+
         <Pressable onPress={handleOpenModal} style={styles.botonCerrarModal}>
           <Text style={styles.textBotonModal}>❌</Text>
         </Pressable>
@@ -286,18 +353,5 @@ const styles = StyleSheet.create({
   },
   diaSemanaActivo: {
     backgroundColor: colors.primario,
-  },
-  botonGrabarAudio: {
-    backgroundColor: colors.primario,
-    width: "100%",
-    maxWidth: 200,
-    height: 40,
-    borderRadius: 10,
-  },
-  botonGrabarAudioText: {
-    color: colors.blanco,
-    margin: "auto",
-    fontSize: 20,
-    fontWeight: 800,
   },
 });
