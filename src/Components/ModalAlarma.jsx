@@ -6,7 +6,7 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { colors } from "../Global/colors";
 import { AlarmaContext } from "../Context/AlarmaContext";
 import SonidoAcordeon from "./SonidoAcordeon";
@@ -23,11 +23,19 @@ const ModalAlarma = () => {
   const [sabado, setSabado] = useState(false);
   const [domingo, setDomingo] = useState(false);
 
+  const [botonSoloUnaVez, setBotonSoloUnaVez] = useState(true);
+
   const [sonidoElegido, setSonidoElegido] = useState(null);
+
+  const minutosRef = useRef(null);
 
   useEffect(() => {
     console.log("Nuevo estado de creandoAlarma:", creandoAlarma);
   }, [creandoAlarma]);
+
+  useEffect(() => {
+    console.log("Alarmas programadas:", alarmasProgramadas);
+  }, [alarmasProgramadas]);
 
   const sonidos = [
     {
@@ -62,6 +70,9 @@ const ModalAlarma = () => {
     cerrarModal,
     creandoAlarma,
     setCreandoAlarma,
+    setAlarmasProgramadas,
+    alarmasProgramadas,
+    agregarAlarma,
   } = useContext(AlarmaContext);
 
   const guardarAlarma = () => {
@@ -79,15 +90,15 @@ const ModalAlarma = () => {
     if (sabado) diasArray.push("Sabado");
     if (domingo) diasArray.push("Domingo");
 
-    if (creandoAlarma.unavez === false && diasArray.length === 0) {
+    if (!botonSoloUnaVez && diasArray.length === 0) {
       alert(
         "Debes elegir por lo menos 1 dia, o seleccionar la opcion `Solo una vez` "
       );
       return;
     }
 
-    const h = parseInt(hora);
-    const m = parseInt(minutos);
+    const h = hora.toString().padStart(2, "0");
+    const m = minutos.toString().padStart(2, "0");
 
     if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
       alert("Hora inválida. Usa formato 24h (00–23) y minutos (00–59)");
@@ -96,22 +107,42 @@ const ModalAlarma = () => {
 
     const nuevaAlarma = {
       ...creandoAlarma,
+      id: `alarma-${Date.now()}`,
       dias: diasArray,
       hora: h,
       minutos: m,
+      unavez: botonSoloUnaVez,
     };
+
     setCreandoAlarma(nuevaAlarma);
 
-    alert(`Alarma programada a las ${h}:${m.toString().padStart(2, "0")}`);
+    alert(`Alarma programada a las ${h}:${m}`);
 
+    console.log(creandoAlarma);
     console.log(nuevaAlarma);
+
+    agregarAlarma(nuevaAlarma);
+
+    resetInputs();
+  };
+
+  const resetInputs = () => {
+    setHora("");
+    setMinutos("");
+    setBotonSoloUnaVez(true);
+    setSonidoElegido(null);
+    cerrarModal();
+    setLunes(false);
+    setMartes(false);
+    setMiercoles(false);
+    setJueves(false);
+    setViernes(false);
+    setSabado(false);
+    setDomingo(false);
   };
 
   const handleBotonUnaVez = () => {
-    setCreandoAlarma((prev) => ({
-      ...prev,
-      unavez: !prev.unavez,
-    }));
+    setBotonSoloUnaVez(!botonSoloUnaVez);
     setLunes(false);
     setMartes(false);
     setMiercoles(false);
@@ -123,6 +154,7 @@ const ModalAlarma = () => {
 
   const handleOpenModal = () => {
     setIsOpenModal(!isOpenModal);
+    resetInputs();
   };
 
   return (
@@ -147,6 +179,10 @@ const ModalAlarma = () => {
               } else {
                 setHora(text);
               }
+
+              if (text.length === 2) {
+                minutosRef.current?.focus();
+              }
             }}
             keyboardType="numeric"
             maxLength={2}
@@ -154,8 +190,9 @@ const ModalAlarma = () => {
             placeholderTextColor={colors.primario}
             style={styles.inputsModal}
           />
-          <Text style={styles.inputsModal}>:</Text>
+          <Text style={styles.inputsModalPuntos}>:</Text>
           <TextInput
+            ref={minutosRef}
             value={minutos}
             onChangeText={(text) => {
               if (text === "") {
@@ -183,14 +220,14 @@ const ModalAlarma = () => {
         <Pressable
           onPress={handleBotonUnaVez}
           style={
-            creandoAlarma.unavez
+            botonSoloUnaVez
               ? styles.botonSoloUnaVez
               : styles.botonSoloUnaVezInactivo
           }
         >
           <Text style={styles.botonSoloUnaVezText}>Solo una vez</Text>
         </Pressable>
-        {!creandoAlarma.unavez && (
+        {!botonSoloUnaVez && (
           <View style={styles.diasSemanaContainer}>
             <Pressable
               style={[styles.diaSemana, lunes && styles.diaSemanaActivo]}
@@ -253,10 +290,10 @@ const ModalAlarma = () => {
         />
 
         <Pressable onPress={handleOpenModal} style={styles.botonCerrarModal}>
-          <Text style={styles.textBotonModal}>❌</Text>
+          <Text style={styles.textBotonModal}>X</Text>
         </Pressable>
-        <Pressable onPress={guardarAlarma}>
-          <Text>Guardar</Text>
+        <Pressable onPress={guardarAlarma} style={styles.botonGuardar}>
+          <Text style={styles.botonGuardarText}>Guardar</Text>
         </Pressable>
       </View>
     </Modal>
@@ -282,13 +319,18 @@ const styles = StyleSheet.create({
   botonCerrarModal: {
     backgroundColor: colors.primario,
     alignSelf: "center",
-    borderRadius: 100,
-    padding: 10,
+    padding: 6,
+    paddingTop: 2,
+    paddingBottom: 2,
+    position: "absolute",
+    top: 8,
+    right: 8,
+    borderRadius: 10,
   },
   textBotonModal: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "900",
+    color: colors.blanco,
+    fontSize: 24,
+    fontWeight: "bold",
   },
   modalTitle: {
     color: colors.primario,
@@ -306,6 +348,10 @@ const styles = StyleSheet.create({
     fontSize: 72,
     color: colors.primario,
     textDecorationLine: "underline",
+  },
+  inputsModalPuntos: {
+    fontSize: 72,
+    color: colors.primario,
   },
   botonSoloUnaVezText: {
     alignSelf: "center",
@@ -353,5 +399,20 @@ const styles = StyleSheet.create({
   },
   diaSemanaActivo: {
     backgroundColor: colors.primario,
+  },
+  botonGuardar: {
+    backgroundColor: colors.primario,
+    maxWidth: 250,
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 8,
+    margin: 16,
+  },
+  botonGuardarText: {
+    alignSelf: "center",
+    margin: "auto",
+    color: colors.blanco,
+    fontSize: 20,
+    fontWeight: 800,
   },
 });

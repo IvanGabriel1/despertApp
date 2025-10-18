@@ -22,7 +22,7 @@ const TabNavigator = () => {
         options={{
           tabBarIcon: ({ focused }) => (
             <FontAwesome
-              name="home"
+              name="plus"
               size={24}
               color={focused ? `#666` : `#111`}
             />
@@ -35,7 +35,7 @@ const TabNavigator = () => {
         options={{
           tabBarIcon: ({ focused }) => (
             <FontAwesome
-              name="home"
+              name="calendar"
               size={24}
               color={focused ? `#666` : `#111`}
             />
@@ -48,7 +48,7 @@ const TabNavigator = () => {
         options={{
           tabBarIcon: ({ focused }) => (
             <FontAwesome
-              name="home"
+              name="bell"
               size={24}
               color={focused ? `#666` : `#111`}
             />

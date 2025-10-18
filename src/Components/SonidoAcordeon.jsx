@@ -53,7 +53,9 @@ const SonidoAcordeon = ({ sonidos, onSeleccionar }) => {
         style={styles.acordeonHeader}
         onPress={() => setIsOpen(!isOpen)}
       >
-        <Text>{sonidoSeleccionado?.nombre || "Elegir sonido"}</Text>
+        <Text style={styles.acordeonTextInput}>
+          {sonidoSeleccionado?.nombre || "Elegir sonido"}
+        </Text>
       </Pressable>
 
       {isOpen && (
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
   acordeonContainer: {
     width: "100%",
     marginVertical: 8,
+    maxWidth: 250,
   },
   acordeonHeader: {
     backgroundColor: colors.primario,
@@ -100,6 +103,13 @@ const styles = StyleSheet.create({
     color: colors.blanco,
     fontSize: 18,
     fontWeight: "bold",
+  },
+  acordeonTextInput: {
+    alignSelf: "center",
+    margin: "auto",
+    color: colors.blanco,
+    fontSize: 20,
+    fontWeight: 800,
   },
   acordeonContent: {
     marginTop: 4,
