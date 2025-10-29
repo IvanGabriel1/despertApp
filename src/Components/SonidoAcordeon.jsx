@@ -4,12 +4,17 @@ import { colors } from "../Global/colors";
 import { Audio } from "expo-av";
 import { AlarmaContext } from "../Context/AlarmaContext";
 
-const SonidoAcordeon = ({ sonidos, onSeleccionar }) => {
+const SonidoAcordeon = ({ sonidos, onSeleccionar, sonidoInicial = null }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [sonidoSeleccionado, setSonidoSeleccionado] = useState(null);
   const [soundObject, setSoundObject] = useState(null);
 
   const { creandoAlarma, setCreandoAlarma } = useContext(AlarmaContext);
+
+  useEffect(() => {
+    // Si el sonidoInicial cambia (por abrir una nueva alarma), actualizamos la selección
+    setSonidoSeleccionado(sonidoInicial || null);
+  }, [sonidoInicial]);
 
   const reproducirPreview = async (archivo) => {
     try {
@@ -74,7 +79,6 @@ const SonidoAcordeon = ({ sonidos, onSeleccionar }) => {
                 onSeleccionar(sonido);
                 reproducirPreview(sonido.archivo);
                 setCreandoAlarma((prev) => ({ ...prev, sonido: sonido }));
-                console.log(creandoAlarma);
               }}
             >
               <Text style={styles.sonidoText}>{sonido.nombre}</Text>
@@ -96,7 +100,7 @@ const styles = StyleSheet.create({
   },
   acordeonHeader: {
     backgroundColor: colors.primario,
-    padding: 12,
+    padding: 6,
     borderRadius: 8,
   },
   acordeonHeaderText: {
