@@ -27,6 +27,8 @@ const ModalAlarma = () => {
 
   const [sonidoElegido, setSonidoElegido] = useState(null);
 
+  const [resetKeySonido, setResetKeySonido] = useState(0);
+
   const minutosRef = useRef(null);
 
   useEffect(() => {
@@ -139,6 +141,8 @@ const ModalAlarma = () => {
     setViernes(false);
     setSabado(false);
     setDomingo(false);
+    setResetKeySonido((prev) => prev + 1);
+    setCreandoAlarma((prev) => ({ ...prev, sonido: null }));
   };
 
   const handleBotonUnaVez = () => {
@@ -153,8 +157,7 @@ const ModalAlarma = () => {
   };
 
   const handleOpenModal = () => {
-    setIsOpenModal(!isOpenModal);
-    resetInputs();
+    setIsOpenModal(true);
   };
 
   return (
@@ -285,8 +288,10 @@ const ModalAlarma = () => {
 
         {/* npx expo install expo-audio => sirve para reproducir audio en aplicaciones Expo.*/}
         <SonidoAcordeon
+          key={resetKeySonido}
           sonidos={sonidos}
           onSeleccionar={(sonido) => setSonidoElegido(sonido)}
+          sonidoInicial={sonidoElegido}
         />
 
         <Pressable onPress={handleOpenModal} style={styles.botonCerrarModal}>

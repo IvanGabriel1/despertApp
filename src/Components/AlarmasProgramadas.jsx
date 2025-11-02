@@ -111,6 +111,7 @@ const AlarmasProgramadas = () => {
     setNuevaHora(null);
     setNuevaMinutos(null);
     setAlarmaSeleccionada(null);
+    setSonidoElegido(null);
     setLunes(false);
     setMartes(false);
     setMiercoles(false);
@@ -184,6 +185,7 @@ const AlarmasProgramadas = () => {
 
       return unicas;
     });
+
     alert(`Alarma actualizada a ${horaFinal}:${minutosFinal}`);
     btnCerrarModalUnaVez();
   };
