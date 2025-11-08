@@ -157,7 +157,7 @@ const ModalAlarma = () => {
   };
 
   const handleOpenModal = () => {
-    setIsOpenModal(true);
+    setIsOpenModal(!isOpenModal);
   };
 
   return (
