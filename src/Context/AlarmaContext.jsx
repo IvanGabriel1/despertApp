@@ -52,6 +52,12 @@ export const AlarmaProvider = ({ children }) => {
         sonidosMap.find((s) => s.nombre === nombre) ||
         sonidosMap.find((s) => s.nombre === "Alarma Despetador");
 
+      if (!sonido || !sonido.archivo) {
+        console.log("Sonido no válido:", nombre);
+        return;
+      }
+
+      console.log("Sonido encontrado:", sonido);
       const { sound } = await Audio.Sound.createAsync(sonido.archivo);
       await sound.playAsync();
     } catch (error) {
@@ -59,16 +65,75 @@ export const AlarmaProvider = ({ children }) => {
     }
   };
 
+  const obtenerProximasAlarmas = (alarmasProgramadas) => {
+    if (!alarmasProgramadas || alarmasProgramadas.length === 0) return [];
+
+    const ahora = new Date();
+
+    const diaSemana = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miercoles",
+      "Jueves",
+      "Viernes",
+      "Sabado",
+    ];
+
+    const alarmasConFecha = alarmasProgramadas.map((alarma) => {
+      const hora = parseInt(alarma.hora);
+      const minutos = parseInt(alarma.minutos);
+
+      //Alarma de una vez
+      if (alarma.unavez) {
+        const fecha = new Date();
+        fecha.setHours(hora);
+        fecha.setMinutes(minutos);
+        fecha.setSeconds(0);
+
+        if (fecha <= ahora) fecha.setDate(fecha.getDate() + 1);
+
+        return { ...alarma, proximaFecha: fecha };
+      }
+
+      //Alarma programada por dias:
+
+      let proximaFecha = null;
+
+      for (let i = 0; i < 7; i++) {
+        const fecha = new Date();
+        fecha.setDate(ahora.getDate() + i);
+        const dia = diaSemana[fecha.getDay()];
+        if (Array.isArray(alarma.dias) && alarma.dias.includes(dia)) {
+          fecha.setHours(hora);
+          fecha.setMinutes(minutos);
+          fecha.setSeconds(0);
+
+          if (i === 0 && fecha <= ahora) continue;
+
+          proximaFecha = fecha;
+
+          break;
+        }
+      }
+
+      return { ...alarma, proximaFecha };
+    });
+
+    // Filtra las que tienen una próxima fecha valida
+    const futuras = alarmasConFecha.filter((a) => a.proximaFecha);
+
+    // Ordenar por fecha mas cercana
+    futuras.sort((a, b) => a.proximaFecha - b.proximaFecha);
+
+    // devolver solo 2:
+    return futuras.slice(0, 2);
+  };
+
   /* Tanto las notificaciones como para el async storage quizas no estan funcionando en desarrollo, para ambas cosas nos recomendaron hacer un development build. y ver si de esa forma funcionan.
   Comenté todo lo de expo-notificaciones al final en agregarAlarma comenté tambien. 
 
   Ver tambien si al borrar alarma se borra la notificacion.
-
-  Tengo que hacer que las que estén programadas por dias suenen en el dia correcto ==> Probar si ya funciona. Probé y funcionó en dia viernes.
-
-  Hacer que en la pantalla inicial nos muestre las proximas 2 alarmas.
-
-  Sorprendido como resolvió que suene la alarma segun los dias, creó un array con los dias de la semana, creo una variable que sea el dia de hoy con getDay() que devuelve un numero del 0 al 6 dependiendo de que dia estamos y selecciona el dia que está en el array con los dias de la semana. Así dia a dia esta variable cambia y hace la comparacion con los dias guardados en cada alarma.
     */
 
   //npx expo install expo-notifications
@@ -223,6 +288,7 @@ export const AlarmaProvider = ({ children }) => {
         alarmasProgramadas,
         agregarAlarma,
         borrarItemAlarma,
+        obtenerProximasAlarmas,
       }}
     >
       {children}

@@ -12,6 +12,7 @@ const Home = () => {
     anio: "",
   });
   const [alarmas, setAlarmas] = useState({});
+  const [proximasAlarmas, setProximasAlarmas] = useState([]);
 
   const {
     isOpenModal,
@@ -19,7 +20,14 @@ const Home = () => {
     cerrarModal,
     creandoAlarma,
     setCreandoAlarma,
+    alarmasProgramadas,
+    obtenerProximasAlarmas,
   } = useContext(AlarmaContext);
+
+  useEffect(() => {
+    const proximas = obtenerProximasAlarmas(alarmasProgramadas);
+    setProximasAlarmas(proximas);
+  }, [alarmasProgramadas]);
 
   // const [hora, setHora] = useState("");
   // const [minutos, setMinutos] = useState("");
@@ -47,7 +55,6 @@ const Home = () => {
     setIsOpenModal(!isOpenModal);
   };
 
-  
   return (
     <View style={styles.homeContainer}>
       <Text style={styles.homeFecha}>
@@ -56,6 +63,20 @@ const Home = () => {
       <Text style={styles.homeHora}>{relojAhora.hora}</Text>
       <View style={styles.proximasAlarmasContainer}>
         <Text style={styles.proximasAlarmasTitle}>Proximas Alarmas:</Text>
+        {proximasAlarmas.length === 0 ? (
+          <Text>No hay alarmas programadas</Text>
+        ) : (
+          proximasAlarmas.map((a) => (
+            <Text key={a.id} style={styles.proximasAlarmasText}>
+              {a.proximaFecha.toLocaleString("es-AR", {
+                weekday: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })}
+            </Text>
+          ))
+        )}
       </View>
 
       <Pressable onPress={handleOpenModal} style={styles.boton}>
@@ -105,5 +126,11 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 48,
     fontWeight: "bold",
+  },
+  proximasAlarmasText: {
+    color: colors.primario,
+    alignSelf: "center",
+    marginTop: 16,
+    fontSize: 16,
   },
 });

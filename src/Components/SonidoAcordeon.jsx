@@ -78,7 +78,11 @@ const SonidoAcordeon = ({ sonidos, onSeleccionar, sonidoInicial = null }) => {
                 setIsOpen(false);
                 onSeleccionar(sonido);
                 reproducirPreview(sonido.archivo);
-                setCreandoAlarma((prev) => ({ ...prev, sonido: sonido }));
+                //Aca tuve un error en pasar el sonido como "sonido" y no "sonido.nombre"
+                setCreandoAlarma((prev) => ({
+                  ...prev,
+                  sonido: sonido.nombre,
+                }));
               }}
             >
               <Text style={styles.sonidoText}>{sonido.nombre}</Text>
