@@ -51,6 +51,12 @@ const Home = () => {
     return () => clearInterval(intervalo);
   }, []);
 
+  useEffect(() => {
+    alert(
+      "La aplicacion se encuentra en desarrollo, por el momento las alarmas solo funcionarán si la aplicación se encuentra en primer plano"
+    );
+  }, []);
+
   const handleOpenModal = () => {
     setIsOpenModal(!isOpenModal);
   };

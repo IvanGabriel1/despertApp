@@ -81,7 +81,7 @@ const SonidoAcordeon = ({ sonidos, onSeleccionar, sonidoInicial = null }) => {
                 //Aca tuve un error en pasar el sonido como "sonido" y no "sonido.nombre"
                 setCreandoAlarma((prev) => ({
                   ...prev,
-                  sonido: sonido.nombre,
+                  sonido, // guardar el objeto completo, no solo el nombre
                 }));
               }}
             >

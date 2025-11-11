@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 import React, { createContext, useEffect, useState } from "react";
 import { Audio } from "expo-av";
-// import * as Notifications from "expo-notifications";
+import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AlarmaContext = createContext();
@@ -58,8 +58,12 @@ export const AlarmaProvider = ({ children }) => {
       }
 
       console.log("Sonido encontrado:", sonido);
+
       const { sound } = await Audio.Sound.createAsync(sonido.archivo);
       await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) sound.unloadAsync();
+      });
     } catch (error) {
       console.log("Error reproduciendo sonido: ", error);
     }
@@ -130,42 +134,53 @@ export const AlarmaProvider = ({ children }) => {
     return futuras.slice(0, 2);
   };
 
-  /* Tanto las notificaciones como para el async storage quizas no estan funcionando en desarrollo, para ambas cosas nos recomendaron hacer un development build. y ver si de esa forma funcionan.
-  Comenté todo lo de expo-notificaciones al final en agregarAlarma comenté tambien. 
+  /* 
+  Arr err sonido al editar alarma + Mod style modalAlarma + se agrega icon + README.md + Alerta por la limitacion de no funcionar en segundo plano.
+  */
 
-  Ver tambien si al borrar alarma se borra la notificacion.
-    */
+  //  eas build -p android --profile preview
+  // (o --profile production si querés una versión final).
 
   //npx expo install expo-notifications
-  /* 
+
   const programarNotificacion = async (alarma) => {
-    const ahora = new Date();
-    const [hora, minutos] = [parseInt(alarma.hora), parseInt(alarma.minutos)];
+    try {
+      const now = new Date();
+      const fecha = new Date();
 
-    const fechaAlarma = new Date(ahora);
-    fechaAlarma.setHours(hora);
-    fechaAlarma.setMinutes(minutos);
-    fechaAlarma.setSeconds(0);
+      fecha.setHours(parseInt(alarma.hora, 10));
+      fecha.setMinutes(parseInt(alarma.minutos, 10));
+      fecha.setSeconds(0);
 
-    //Si la hora de hoy ya pasó, que se programe para mañana
-    if (fechaAlarma <= ahora) {
-      fechaAlarma.setDate(fechaAlarma.getDate() + 1);
+      // Si la hora ya pasó hoy → programar para mañana
+      if (fecha <= now) fecha.setDate(fecha.getDate() + 1);
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "⏰ Alarma",
+          body: `Son las ${alarma.hora}:${alarma.minutos}`,
+          sound: alarma.sonido?.nombre || "default",
+        },
+        trigger: { type: "date", date: fecha },
+      });
+
+      return notificationId;
+    } catch (error) {
+      console.log("Error al programar notificación:", error);
     }
-
-    const sonido = sonidosMap.find((s) => s.nombre === alarma.sonido);
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Alarma",
-        body: `Alarma de las: ${alarma.hora} : ${alarma.minutos}`,
-      },
-      trigger: {
-        type: "date",
-        date: fechaAlarma, // ✅ ahora es compatible
-      },
-    });
   };
-*/
+
+  const cancelarNotificacion = async (notificationId) => {
+    try {
+      if (notificationId) {
+        await Notifications.cancelScheduledNotificationAsync(notificationId);
+        console.log(`🛑 Notificación ${notificationId} cancelada`);
+      }
+    } catch (error) {
+      console.log("❌ Error al cancelar notificación:", error);
+    }
+  };
+
   //npm install @react-native-async-storage/async-storage
 
   useEffect(() => {
@@ -179,7 +194,7 @@ export const AlarmaProvider = ({ children }) => {
       if (guardadas) setAlarmasProgramadas(JSON.parse(guardadas));
     })();
   }, []);
-  /*
+
   useEffect(() => {
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -188,7 +203,6 @@ export const AlarmaProvider = ({ children }) => {
       }
     })();
   }, []);
-*/
 
   // useEffect disparador de la alarma:
   useEffect(() => {
@@ -201,10 +215,10 @@ export const AlarmaProvider = ({ children }) => {
         "Domingo",
         "Lunes",
         "Martes",
-        "Miércoles",
+        "Miercoles",
         "Jueves",
         "Viernes",
-        "Sábado",
+        "Sabado",
       ];
       const diaActual = diasSemana[ahora.getDay()];
 
@@ -241,22 +255,13 @@ export const AlarmaProvider = ({ children }) => {
           return false;
         }
 
-        if (
-          Array.isArray(alarma.dias) &&
-          alarma.dias.includes(diaActual) &&
-          alarma.hora === horaActual &&
-          alarma.minutos === minutosActuales
-        ) {
-          return false;
-        }
-        // En cualquier otro caso, la mantenemos
         return true;
       });
 
       if (alarmasRestantes.length !== alarmasProgramadas.length) {
         setAlarmasProgramadas(alarmasRestantes);
       }
-    }, 1000 * 10);
+    }, 1000 * 20);
 
     return () => clearInterval(intervalo);
   }, [alarmasProgramadas]);
@@ -264,14 +269,18 @@ export const AlarmaProvider = ({ children }) => {
   const abrirModal = () => setIsOpenModal(true);
   const cerrarModal = () => setIsOpenModal(false);
 
-  const agregarAlarma = (nuevaAlarma) => {
-    setAlarmasProgramadas((prev) => [...prev, nuevaAlarma]);
-    // programarNotificacion(nuevaAlarma);
+  const agregarAlarma = async (nuevaAlarma) => {
+    const notificationId = await programarNotificacion(nuevaAlarma);
+    const alarmaConNotificacion = { ...nuevaAlarma, notificationId };
+    setAlarmasProgramadas((prev) => [...prev, alarmaConNotificacion]);
   };
 
-  const borrarItemAlarma = (item) => {
-    setAlarmasProgramadas((alarmasPrev) =>
-      alarmasPrev.filter((alarma) => alarma.id !== item.id)
+  const borrarItemAlarma = async (item) => {
+    if (item.notificationId) {
+      await Notifications.cancelScheduledNotificationAsync(item.notificationId);
+    }
+    setAlarmasProgramadas((prev) =>
+      prev.filter((alarma) => alarma.id !== item.id)
     );
   };
 
@@ -289,6 +298,8 @@ export const AlarmaProvider = ({ children }) => {
         agregarAlarma,
         borrarItemAlarma,
         obtenerProximasAlarmas,
+        cancelarNotificacion,
+        programarNotificacion,
       }}
     >
       {children}

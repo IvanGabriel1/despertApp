@@ -7,11 +7,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useRef, useState, useEffect } from "react";
 import { colors } from "../Global/colors";
 import { AlarmaContext } from "../Context/AlarmaContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SonidoAcordeon from "./SonidoAcordeon";
+import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AlarmasProgramadas = () => {
   const [isOpenModalProgramadas, setIsOpenModalProgramadas] = useState(false);
@@ -28,8 +30,13 @@ const AlarmasProgramadas = () => {
   const [sabado, setSabado] = useState(false);
   const [domingo, setDomingo] = useState(false);
 
-  const { alarmasProgramadas, borrarItemAlarma, setAlarmasProgramadas } =
-    useContext(AlarmaContext);
+  const {
+    alarmasProgramadas,
+    borrarItemAlarma,
+    setAlarmasProgramadas,
+    programarNotificacion,
+    cancelarNotificacion,
+  } = useContext(AlarmaContext);
   const minutosRef = useRef(null);
 
   const sonidos = [
@@ -121,10 +128,9 @@ const AlarmasProgramadas = () => {
     setDomingo(false);
   };
 
-  const guardarCambios = () => {
+  const guardarCambios = async () => {
     if (!alarmaSeleccionada) return;
 
-    // Si el usuario borró los campos → no guardar vacío
     if (nuevaHora === "" || nuevaMinutos === "") {
       alert(
         "No se puede guardar una alarma vacía. Completá la hora y los minutos."
@@ -141,7 +147,11 @@ const AlarmasProgramadas = () => {
       nuevaMinutos && nuevaMinutos.trim() !== ""
         ? nuevaMinutos
         : alarmaSeleccionada.minutos;
-    let sonidoFinal = sonidoElegido ?? alarmaSeleccionada.sonido;
+    let sonidoFinal =
+      sonidoElegido?.nombre ??
+      (typeof alarmaSeleccionada.sonido === "object"
+        ? alarmaSeleccionada.sonido.nombre
+        : alarmaSeleccionada.sonido);
 
     // formatear a dos dígitos
     if (horaFinal?.length === 1) horaFinal = horaFinal.padStart(2, "0");
@@ -158,6 +168,18 @@ const AlarmasProgramadas = () => {
     if (sabado) nuevosDias.push("Sabado");
     if (domingo) nuevosDias.push("Domingo");
 
+    if (alarmaSeleccionada.notificationId) {
+      await cancelarNotificacion(alarmaSeleccionada.notificationId);
+    }
+
+    const notificationId = await programarNotificacion({
+      ...alarmaSeleccionada,
+      hora: horaFinal,
+      minutos: minutosFinal,
+      sonido: sonidoFinal,
+      dias: nuevosDias,
+    });
+
     setAlarmasProgramadas((prev) => {
       const actualizadas = prev.map((item) =>
         item.id === alarmaSeleccionada.id
@@ -167,6 +189,7 @@ const AlarmasProgramadas = () => {
               minutos: minutosFinal,
               sonido: sonidoFinal,
               dias: nuevosDias,
+              notificationId,
             }
           : item
       );
@@ -189,6 +212,15 @@ const AlarmasProgramadas = () => {
     alert(`Alarma actualizada a ${horaFinal}:${minutosFinal}`);
     btnCerrarModalUnaVez();
   };
+
+  useEffect(() => {
+    AsyncStorage.setItem(
+      "alarmasProgramadas",
+      JSON.stringify(alarmasProgramadas)
+    )
+      .then(() => console.log("✅ Alarmas guardadas en AsyncStorage"))
+      .catch((err) => console.log("❌ Error guardando alarmas:", err));
+  }, [alarmasProgramadas]);
 
   return (
     <SafeAreaView style={styles.alarmasDeUnaVezContainer}>
@@ -271,7 +303,12 @@ const AlarmasProgramadas = () => {
               <View style={styles.alarmasDeUnaVezContenedorBotones}>
                 <Pressable
                   style={styles.alarmasDeUnaVezBorrar}
-                  onPress={() => borrarItemAlarma(item)}
+                  onPress={async () => {
+                    if (item.notificationId) {
+                      await cancelarNotificacion(item.notificationId);
+                    }
+                    borrarItemAlarma(item);
+                  }}
                 >
                   <Text style={styles.alarmasDeUnaVezBorrarText}>Borrar</Text>
                 </Pressable>
@@ -368,7 +405,7 @@ const AlarmasProgramadas = () => {
 
                     // Validar rango
                     if (num < 0 || num >= 60) {
-                      alert("Minutos inválida. Usa formato 24h (00–23)");
+                      alert("Minutos inválida. Usa formato (00–59)");
                       setNuevaMinutos("59");
                       return;
                     }

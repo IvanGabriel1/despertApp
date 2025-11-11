@@ -77,7 +77,7 @@ const ModalAlarma = () => {
     agregarAlarma,
   } = useContext(AlarmaContext);
 
-  const guardarAlarma = () => {
+  const guardarAlarma = async () => {
     if (hora === "" || minutos === "") {
       alert("Tenes que completar la hora y minutos");
       return;
@@ -110,6 +110,7 @@ const ModalAlarma = () => {
     const nuevaAlarma = {
       ...creandoAlarma,
       id: `alarma-${Date.now()}`,
+      notificationId: "UUID-de-Expo",
       dias: diasArray,
       hora: h,
       minutos: m,
@@ -118,12 +119,11 @@ const ModalAlarma = () => {
 
     setCreandoAlarma(nuevaAlarma);
 
+    // console.log(creandoAlarma);
+    // console.log(nuevaAlarma);
+    await agregarAlarma(nuevaAlarma);
+
     alert(`Alarma programada a las ${h}:${m}`);
-
-    console.log(creandoAlarma);
-    console.log(nuevaAlarma);
-
-    agregarAlarma(nuevaAlarma);
 
     resetInputs();
   };
@@ -161,145 +161,147 @@ const ModalAlarma = () => {
   };
 
   return (
-    <Modal visible={isOpenModal} animationType="slide" transparent={true}>
-      <View style={styles.modalContainer}>
-        <Text style={styles.modalTitle}>Creando Alarma:</Text>
-        <View style={styles.inputModalContainer}>
-          <TextInput
-            value={hora}
-            onChangeText={(text) => {
-              if (text === "") {
-                setHora("");
-                return;
-              }
+    <Modal visible={isOpenModal} animationType="slide" transparent={false}>
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Creando Alarma:</Text>
+          <View style={styles.inputModalContainer}>
+            <TextInput
+              value={hora}
+              onChangeText={(text) => {
+                if (text === "") {
+                  setHora("");
+                  return;
+                }
 
-              const num = parseInt(text, 10);
+                const num = parseInt(text, 10);
 
-              if (isNaN(num)) return;
+                if (isNaN(num)) return;
 
-              if (num > 23) {
-                setHora("23");
-              } else {
-                setHora(text);
-              }
+                if (num > 23) {
+                  setHora("23");
+                } else {
+                  setHora(text);
+                }
 
-              if (text.length === 2) {
-                minutosRef.current?.focus();
-              }
-            }}
-            keyboardType="numeric"
-            maxLength={2}
-            placeholder="HH"
-            placeholderTextColor={colors.primario}
-            style={styles.inputsModal}
-          />
-          <Text style={styles.inputsModalPuntos}>:</Text>
-          <TextInput
-            ref={minutosRef}
-            value={minutos}
-            onChangeText={(text) => {
-              if (text === "") {
-                setMinutos("");
-                return;
-              }
+                if (text.length === 2) {
+                  minutosRef.current?.focus();
+                }
+              }}
+              keyboardType="numeric"
+              maxLength={2}
+              placeholder="HH"
+              placeholderTextColor={colors.primario}
+              style={styles.inputsModal}
+            />
+            <Text style={styles.inputsModalPuntos}>:</Text>
+            <TextInput
+              ref={minutosRef}
+              value={minutos}
+              onChangeText={(text) => {
+                if (text === "") {
+                  setMinutos("");
+                  return;
+                }
 
-              const num = parseInt(text, 10);
+                const num = parseInt(text, 10);
 
-              if (isNaN(num)) return;
+                if (isNaN(num)) return;
 
-              if (num > 59) {
-                setMinutos("59");
-              } else {
-                setMinutos(text);
-              }
-            }}
-            keyboardType="numeric"
-            maxLength={2}
-            placeholder="MM"
-            placeholderTextColor={colors.primario}
-            style={styles.inputsModal}
-          />
-        </View>
-        <Pressable
-          onPress={handleBotonUnaVez}
-          style={
-            botonSoloUnaVez
-              ? styles.botonSoloUnaVez
-              : styles.botonSoloUnaVezInactivo
-          }
-        >
-          <Text style={styles.botonSoloUnaVezText}>Solo una vez</Text>
-        </Pressable>
-        {!botonSoloUnaVez && (
-          <View style={styles.diasSemanaContainer}>
-            <Pressable
-              style={[styles.diaSemana, lunes && styles.diaSemanaActivo]}
-              onPress={() => setLunes((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>L</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.diaSemana, martes && styles.diaSemanaActivo]}
-              onPress={() => setMartes((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>M</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.diaSemana, miercoles && styles.diaSemanaActivo]}
-              onPress={() => setMiercoles((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>M</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.diaSemana, jueves && styles.diaSemanaActivo]}
-              onPress={() => setJueves((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>J</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.diaSemana, viernes && styles.diaSemanaActivo]}
-              onPress={() => setViernes((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>V</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.diaSemana, sabado && styles.diaSemanaActivo]}
-              onPress={() => setSabado((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>S</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.diaSemana, domingo && styles.diaSemanaActivo]}
-              onPress={() => setDomingo((prev) => !prev)}
-            >
-              <Text style={styles.diaSemanaText}>D</Text>
-            </Pressable>
+                if (num > 59) {
+                  setMinutos("59");
+                } else {
+                  setMinutos(text);
+                }
+              }}
+              keyboardType="numeric"
+              maxLength={2}
+              placeholder="MM"
+              placeholderTextColor={colors.primario}
+              style={styles.inputsModal}
+            />
           </View>
-        )}
+          <Pressable
+            onPress={handleBotonUnaVez}
+            style={
+              botonSoloUnaVez
+                ? styles.botonSoloUnaVez
+                : styles.botonSoloUnaVezInactivo
+            }
+          >
+            <Text style={styles.botonSoloUnaVezText}>Solo una vez</Text>
+          </Pressable>
+          {!botonSoloUnaVez && (
+            <View style={styles.diasSemanaContainer}>
+              <Pressable
+                style={[styles.diaSemana, lunes && styles.diaSemanaActivo]}
+                onPress={() => setLunes((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>L</Text>
+              </Pressable>
 
-        <Text style={styles.modalTitle2}>Audio de la alarma:</Text>
+              <Pressable
+                style={[styles.diaSemana, martes && styles.diaSemanaActivo]}
+                onPress={() => setMartes((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>M</Text>
+              </Pressable>
 
-        {/*Para la funcion de grabar tu propio audio no tendria que usar expo sino: Eject a React Native CLI (expo eject) */}
-        {/* <Pressable style={styles.botonGrabarAudio}>
+              <Pressable
+                style={[styles.diaSemana, miercoles && styles.diaSemanaActivo]}
+                onPress={() => setMiercoles((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>M</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.diaSemana, jueves && styles.diaSemanaActivo]}
+                onPress={() => setJueves((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>J</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.diaSemana, viernes && styles.diaSemanaActivo]}
+                onPress={() => setViernes((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>V</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.diaSemana, sabado && styles.diaSemanaActivo]}
+                onPress={() => setSabado((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>S</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.diaSemana, domingo && styles.diaSemanaActivo]}
+                onPress={() => setDomingo((prev) => !prev)}
+              >
+                <Text style={styles.diaSemanaText}>D</Text>
+              </Pressable>
+            </View>
+          )}
+
+          <Text style={styles.modalTitle2}>Audio de la alarma:</Text>
+
+          {/*Para la funcion de grabar tu propio audio no tendria que usar expo sino: Eject a React Native CLI (expo eject) */}
+          {/* <Pressable style={styles.botonGrabarAudio}>
           <Text style={styles.botonGrabarAudioText}>Grabar Audio</Text>
         </Pressable> */}
 
-        {/* npx expo install expo-audio => sirve para reproducir audio en aplicaciones Expo.*/}
-        <SonidoAcordeon
-          key={resetKeySonido}
-          sonidos={sonidos}
-          onSeleccionar={(sonido) => setSonidoElegido(sonido)}
-          sonidoInicial={sonidoElegido}
-        />
+          {/* npx expo install expo-audio => sirve para reproducir audio en aplicaciones Expo.*/}
+          <SonidoAcordeon
+            key={resetKeySonido}
+            sonidos={sonidos}
+            onSeleccionar={(sonido) => setSonidoElegido(sonido)}
+            sonidoInicial={sonidoElegido}
+          />
 
-        <Pressable onPress={handleOpenModal} style={styles.botonCerrarModal}>
-          <Text style={styles.textBotonModal}>X</Text>
-        </Pressable>
-        <Pressable onPress={guardarAlarma} style={styles.botonGuardar}>
-          <Text style={styles.botonGuardarText}>Guardar</Text>
-        </Pressable>
+          <Pressable onPress={handleOpenModal} style={styles.botonCerrarModal}>
+            <Text style={styles.textBotonModal}>X</Text>
+          </Pressable>
+          <Pressable onPress={guardarAlarma} style={styles.botonGuardar}>
+            <Text style={styles.botonGuardarText}>Guardar</Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   );
@@ -308,18 +310,24 @@ const ModalAlarma = () => {
 export default ModalAlarma;
 
 const styles = StyleSheet.create({
+  modalBackground: {
+    backgroundColor: colors.primarioAlphaColor50,
+    height: "100%",
+  },
   modalContainer: {
-    marginTop: 32,
+    marginTop: "auto",
+    marginBottom: "auto",
     marginLeft: 32,
     marginRight: 32,
-    marginBottom: 20,
     padding: 16,
+    width: "90%",
     borderRadius: 20,
     borderWidth: 3,
     borderColor: colors.primario,
     backgroundColor: colors.fondo,
-    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
   },
   botonCerrarModal: {
     backgroundColor: colors.primario,

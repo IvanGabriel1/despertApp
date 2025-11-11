@@ -12,6 +12,7 @@ import { colors } from "../Global/colors";
 import { AlarmaContext } from "../Context/AlarmaContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SonidoAcordeon from "./SonidoAcordeon";
+import * as Notifications from "expo-notifications";
 
 const AlarmasDeUnaVez = () => {
   const [isOpenModalUnaVez, setIsOpenModalUnaVez] = useState(false);
@@ -20,8 +21,13 @@ const AlarmasDeUnaVez = () => {
   const [nuevaMinutos, setNuevaMinutos] = useState(null);
   const [sonidoElegido, setSonidoElegido] = useState(null);
 
-  const { alarmasProgramadas, borrarItemAlarma, setAlarmasProgramadas } =
-    useContext(AlarmaContext);
+  const {
+    alarmasProgramadas,
+    borrarItemAlarma,
+    setAlarmasProgramadas,
+    programarNotificacion,
+    cancelarNotificacion,
+  } = useContext(AlarmaContext);
   const minutosRef = useRef(null);
 
   const sonidos = [
@@ -73,20 +79,6 @@ const AlarmasDeUnaVez = () => {
       );
     });
 
-  // const limpiarAlarmasDuplicadas = (alarmas) => {
-  //   const unicas = alarmas.filter(
-  //     (item, index, self) =>
-  //       index ===
-  //       self.findIndex(
-  //         (t) =>
-  //           t.hora === item.hora &&
-  //           t.minutos === item.minutos &&
-  //           t.unavez === item.unavez
-  //       )
-  //   );
-  //   setAlarmasProgramadas(unicas);
-  // };
-
   const btnEditar = (item) => {
     setAlarmaSeleccionada(item);
     setIsOpenModalUnaVez(true);
@@ -97,11 +89,12 @@ const AlarmasDeUnaVez = () => {
     setNuevaHora(null);
     setNuevaMinutos(null);
     setAlarmaSeleccionada(null);
+    setSonidoElegido(null);
   };
-  const guardarCambios = () => {
+
+  const guardarCambios = async () => {
     if (!alarmaSeleccionada) return;
 
-    // Si el usuario borró los campos → no guardar vacío
     if (nuevaHora === "" || nuevaMinutos === "") {
       alert(
         "No se puede guardar una alarma vacía. Completá la hora y los minutos."
@@ -118,12 +111,27 @@ const AlarmasDeUnaVez = () => {
       nuevaMinutos && nuevaMinutos.trim() !== ""
         ? nuevaMinutos
         : alarmaSeleccionada.minutos;
-    let sonidoFinal = sonidoElegido ?? alarmaSeleccionada.sonido;
+    let sonidoFinal =
+      sonidoElegido?.nombre ??
+      (typeof alarmaSeleccionada.sonido === "object"
+        ? alarmaSeleccionada.sonido.nombre
+        : alarmaSeleccionada.sonido);
 
     // formatear a dos dígitos
     if (horaFinal?.length === 1) horaFinal = horaFinal.padStart(2, "0");
     if (minutosFinal?.length === 1)
       minutosFinal = minutosFinal.padStart(2, "0");
+
+    if (alarmaSeleccionada.notificationId) {
+      await cancelarNotificacion(alarmaSeleccionada.notificationId);
+    }
+
+    const notificationId = await programarNotificacion({
+      ...alarmaSeleccionada,
+      hora: horaFinal,
+      minutos: minutosFinal,
+      sonido: sonidoFinal,
+    });
 
     setAlarmasProgramadas((prev) => {
       const actualizadas = prev.map((item) =>
@@ -133,6 +141,7 @@ const AlarmasDeUnaVez = () => {
               hora: horaFinal,
               minutos: minutosFinal,
               sonido: sonidoFinal,
+              notificationId,
             }
           : item
       );
@@ -271,7 +280,7 @@ const AlarmasDeUnaVez = () => {
 
                     // Validar rango
                     if (num < 0 || num >= 60) {
-                      alert("Hora inválida. Usa formato 24h (00–23)");
+                      alert("Hora inválida. Usa valores entre 00–59");
                       setNuevaMinutos("59");
                       return;
                     }
