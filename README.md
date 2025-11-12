@@ -110,6 +110,7 @@ npx expo start
   <img src="./assets/screenshots/Imagen-Creando-Alarma2.jpeg" alt="Creando alarma Segunda Imagen" width="200"/>
   <img src="./assets/screenshots/ImagenAlarmasProgramadas.jpeg" alt="Alarmas programadas" width="200"/>
   <img src="./assets/screenshots/ImagenAlarmasdeunaVez.jpeg" alt="Alarmas de una vez" width="200"/>
+  <img src="./assets/screenshots/Imagen-Figma.jpeg" alt="Figma" width="200"/>
 </p>
 ---
 
