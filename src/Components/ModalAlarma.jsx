@@ -119,8 +119,8 @@ const ModalAlarma = () => {
 
     setCreandoAlarma(nuevaAlarma);
 
-    // console.log(creandoAlarma);
-    // console.log(nuevaAlarma);
+    console.log(creandoAlarma);
+    console.log(nuevaAlarma);
     await agregarAlarma(nuevaAlarma);
 
     alert(`Alarma programada a las ${h}:${m}`);
